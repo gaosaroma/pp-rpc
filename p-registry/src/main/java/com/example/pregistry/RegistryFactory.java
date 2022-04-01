@@ -7,29 +7,44 @@ import com.example.pregistry.loadbalancer.RoundRobinLoadBalancer;
 public class RegistryFactory {
     private static volatile RegistryService registryService;
 
-    public static RegistryService getInstance(String registryAddr, LoadBalanceType loadBalanceType) throws Exception {
+    public static RegistryService getInstance(String registryAddr,RegistryType registryType, LoadBalanceType loadBalanceType) throws Exception {
         if (null == registryService) {
             synchronized (RegistryFactory.class) {
                 if (null == registryService) {
-                    switch (loadBalanceType) {
-                        case CONSISTENT_HASH:
-                            registryService = new ZookeeperRegistryService(registryAddr, new ConsistentHashLoadBalancer());
+                    switch (registryType){
+                        case ZOOKEEPER:
+                            switch (loadBalanceType) {
+                                case CONSISTENT_HASH:
+                                    registryService = new ZookeeperRegistryService(registryAddr, new ConsistentHashLoadBalancer());
+                                    break;
+                                case ROUND_ROBIN:
+                                    registryService = new ZookeeperRegistryService(registryAddr, new RoundRobinLoadBalancer());
+                                    break;
+                            }
                             break;
-                        case ROUND_ROBIN:
-                            registryService = new ZookeeperRegistryService(registryAddr, new RoundRobinLoadBalancer());
+                        case NACOS:
+                            registryService = new NacosRegistryService(registryAddr);
                             break;
                     }
+
                 }
             }
         }
         return registryService;
     }
 
-    public static RegistryService getInstance(String registryAddr,RegistryType registryType) throws Exception {
+    public static RegistryService getInstance(String registryAddr, RegistryType registryType) throws Exception {
         if (null == registryService) {
             synchronized (RegistryFactory.class) {
                 if (null == registryService) {
-                    registryService = new ZookeeperRegistryService(registryAddr);
+                    switch (registryType){
+                        case ZOOKEEPER:
+                            registryService = new ZookeeperRegistryService(registryAddr);
+                            break;
+                        case NACOS:
+                            registryService = new NacosRegistryService(registryAddr);
+                            break;
+                    }
 
                 }
             }

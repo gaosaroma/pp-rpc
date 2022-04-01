@@ -11,5 +11,5 @@ public interface RegistryService {
 
     ServiceInfo discovery(String serviceName, int invokerHashCode) throws Exception;
 
-    void destroy() throws IOException;
+    void destroy() throws Exception;
 }

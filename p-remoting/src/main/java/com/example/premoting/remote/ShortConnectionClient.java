@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ShortConnectionClient extends Client {
     private final Bootstrap bootstrap;
     private final EventLoopGroup eventLoopGroup;
+    // TODO ConcurrentHashMap<String,ChannelFuture> -> ConcurrentHashMap<String,List<ChannelFuture>> for failover and forking
     private static volatile ShortConnectionClient instance = null;
 
     public static ShortConnectionClient getInstance() {

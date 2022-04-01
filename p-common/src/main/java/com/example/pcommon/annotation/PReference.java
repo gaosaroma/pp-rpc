@@ -17,9 +17,9 @@ import java.lang.annotation.Target;
 public @interface PReference {
     String serviceVersion() default "1.0";
 
-    String registryType() default "ZOOKEEPER";
+    String registryType() default "ZOOKEEPER"; // "NACOS"
 
-    String registryAddress() default "127.0.0.1:2181";
+    String registryAddress() default "127.0.0.1:2181"; // "127.0.0.1:8848"
 
     RemoteType remoteType() default RemoteType.LONG;
 

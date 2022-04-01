@@ -27,7 +27,7 @@ public class LongConnectionClient extends Client {
     private final Bootstrap bootstrap;
     private final EventLoopGroup eventLoopGroup;
     private static volatile LongConnectionClient instance = null;
-
+    // TODO ConcurrentHashMap<String,ChannelFuture> -> ConcurrentHashMap<String,List<ChannelFuture>> for failover and forking
     public static final ConcurrentHashMap<String,ChannelFuture> channelFutureMap = new ConcurrentHashMap<>();
 
     public static LongConnectionClient getInstance() {

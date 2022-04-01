@@ -15,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 @Slf4j
@@ -83,7 +85,14 @@ public class ConsumerProxy implements InvocationHandler {
         Object o = null;
         switch (asyncType) {
             case SYNC:
-                o = future.getPromise().get(future.getTimeout(), TimeUnit.MILLISECONDS).getData();
+
+                try {
+                    o = future.getPromise().get(future.getTimeout(), TimeUnit.MILLISECONDS).getData();
+                } catch (TimeoutException e){
+                    // TODO failover
+
+                };
+
                 break;
             case ASYNC:
                 RpcContext.setContext(future);
