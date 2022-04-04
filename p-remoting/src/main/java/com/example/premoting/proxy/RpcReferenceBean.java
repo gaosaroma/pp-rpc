@@ -1,11 +1,9 @@
 package com.example.premoting.proxy;
 
-import com.example.pcommon.AsyncType;
-import com.example.pcommon.LoadBalanceType;
-import com.example.pcommon.RemoteType;
-import com.example.pcommon.SerializationType;
+import com.example.pcommon.*;
 import com.example.pregistry.RegistryFactory;
 import com.example.pregistry.RegistryService;
+import com.example.pregistry.RegistryType;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.lang.reflect.Proxy;
@@ -17,7 +15,7 @@ public class RpcReferenceBean implements FactoryBean<Object> {
 
     private String registryType;
     private AsyncType asyncType;
-
+    private FailType failType;
     private String registryAddr;
 
     private RemoteType remoteType;
@@ -43,12 +41,12 @@ public class RpcReferenceBean implements FactoryBean<Object> {
     }
 
     public void init() throws Exception {
-        RegistryService registryService = RegistryFactory.getInstance(this.registryAddr, this.loadBalanceType);
+        RegistryService registryService = RegistryFactory.getInstance(this.registryAddr, RegistryType.valueOf(this.registryType), this.loadBalanceType);
 
         this.object = Proxy.newProxyInstance(
                 interfaceClass.getClassLoader(),
                 new Class<?>[]{interfaceClass},
-                new ConsumerProxy(serviceVersion, timeout, registryService, remoteType, serialType, asyncType));
+                new ConsumerProxy(serviceVersion, timeout, registryService, remoteType, serialType, asyncType,failType));
     }
 
     public void setInterfaceClass(Class<?> interfaceClass) {
@@ -92,5 +90,9 @@ public class RpcReferenceBean implements FactoryBean<Object> {
 
     public void setAsyncType(AsyncType asyncType) {
         this.asyncType = asyncType;
+    }
+
+    public void setFailType(FailType failType) {
+        this.failType = failType;
     }
 }

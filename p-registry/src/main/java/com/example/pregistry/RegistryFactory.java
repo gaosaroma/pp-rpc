@@ -2,6 +2,8 @@ package com.example.pregistry;
 
 import com.example.pcommon.LoadBalanceType;
 import com.example.pregistry.loadbalancer.ConsistentHashLoadBalancer;
+import com.example.pregistry.loadbalancer.NacosConsistentHashLoadBalancer;
+import com.example.pregistry.loadbalancer.NacosRoundRobinLoadBalancer;
 import com.example.pregistry.loadbalancer.RoundRobinLoadBalancer;
 
 public class RegistryFactory {
@@ -23,7 +25,14 @@ public class RegistryFactory {
                             }
                             break;
                         case NACOS:
-                            registryService = new NacosRegistryService(registryAddr);
+                            switch (loadBalanceType) {
+                                case CONSISTENT_HASH:
+                                    registryService = new NacosRegistryService(registryAddr, new NacosConsistentHashLoadBalancer());
+                                    break;
+                                case ROUND_ROBIN:
+                                    registryService = new NacosRegistryService(registryAddr, new NacosRoundRobinLoadBalancer());
+                                    break;
+                            }
                             break;
                     }
 

@@ -27,15 +27,15 @@ public class ConsumerProxy implements InvocationHandler {
     private final RegistryService registryService;
     private final SerializationType serialType;
     private final AsyncType asyncType;
-
+    private final FailType failType;
     private final Client client;
 
-    public ConsumerProxy(String serviceVersion, long timeout, RegistryService registryService, RemoteType remoteType, SerializationType serialType, AsyncType asyncType) {
+    public ConsumerProxy(String serviceVersion, long timeout, RegistryService registryService, RemoteType remoteType, SerializationType serialType, AsyncType asyncType, FailType failType) {
         this.registryService = registryService;
         this.serviceVersion = serviceVersion;
         this.timeout = timeout;
         this.asyncType = asyncType;
-
+        this.failType = failType;
         this.serialType = serialType;
 
         if (remoteType == RemoteType.SHORT) {
@@ -45,10 +45,10 @@ public class ConsumerProxy implements InvocationHandler {
         }
     }
 
-    private ServiceInfo lookup(String className, String serviceVersion, Object[] params, RegistryService registryService) throws Exception {
+    private ServiceInfo lookup(String className, String serviceVersion, Object[] params, RegistryService registryService, int offset) throws Exception {
         String serviceKey = RpcServiceUtil.buildServiceKey(className, serviceVersion);
         int invokerHashCode = params.length > 0 ? params[0].hashCode() : serviceKey.hashCode();
-        return registryService.discovery(serviceKey, invokerHashCode);
+        return registryService.discovery(serviceKey, invokerHashCode + offset);
 
     }
 
@@ -73,30 +73,47 @@ public class ConsumerProxy implements InvocationHandler {
         request.setParams(args);
         protocol.setBody(request);
 
-        ServiceInfo serviceInfo = lookup(request.getClassName(), request.getServiceVersion(), request.getParams(), this.registryService);
 
         PFuture<PResponse> future = new PFuture<>(new DefaultPromise<>(new DefaultEventLoop()), timeout);
-
         PRequestHolder.REQUEST_MAP.put(requestId, future);
-
-
-        client.sendRequest(protocol, serviceInfo);
 
         Object o = null;
         switch (asyncType) {
             case SYNC:
-
-                try {
-                    o = future.getPromise().get(future.getTimeout(), TimeUnit.MILLISECONDS).getData();
-                } catch (TimeoutException e){
-                    // TODO failover
-
-                };
-
+                switch (failType) {
+                    case FAIL_OVER:
+                        // fail_over 切换4次provider
+                        for (int i = 1; i < 10; i++) {
+                            try {
+                                ServiceInfo nxtService = lookup(request.getClassName(), request.getServiceVersion(), request.getParams(), this.registryService, i);
+                                client.sendRequest(protocol, nxtService);
+                                o = future.getPromise().get(future.getTimeout(), TimeUnit.MILLISECONDS).getData();
+                                return o;
+                            } catch (TimeoutException e) {
+                                log.info("timeout request for provider, and fail_over");
+                                if (i == 9) {
+                                    throw e;
+                                }
+                            }
+                        }
+                        break;
+                    case FAIL_FAST:
+                        try {
+                            ServiceInfo serviceInfo = lookup(request.getClassName(), request.getServiceVersion(), request.getParams(), this.registryService, 0);
+                            client.sendRequest(protocol, serviceInfo);
+                            o = future.getPromise().get(future.getTimeout(), TimeUnit.MILLISECONDS).getData();
+                            return o;
+                        } catch (TimeoutException e) {
+                            log.info("timeout request for provider, and fail_fast");
+                            throw e;
+                        }
+                }
                 break;
             case ASYNC:
+                ServiceInfo serviceInfo = lookup(request.getClassName(), request.getServiceVersion(), request.getParams(), this.registryService, 0);
+                client.sendRequest(protocol, serviceInfo);
                 RpcContext.setContext(future);
-                break;
+                return o;
         }
 
         return o;

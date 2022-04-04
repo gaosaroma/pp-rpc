@@ -1,9 +1,6 @@
 package com.example.pcommon.annotation;
 
-import com.example.pcommon.AsyncType;
-import com.example.pcommon.LoadBalanceType;
-import com.example.pcommon.RemoteType;
-import com.example.pcommon.SerializationType;
+import com.example.pcommon.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.annotation.ElementType;
@@ -24,6 +21,8 @@ public @interface PReference {
     RemoteType remoteType() default RemoteType.LONG;
 
     AsyncType asyncType() default AsyncType.SYNC;
+
+    FailType failType() default FailType.FAIL_FAST;
 
     SerializationType serialType() default SerializationType.HESSIAN;
 

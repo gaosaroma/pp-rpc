@@ -99,6 +99,8 @@ public class RpcConsumerPostProcessor implements ApplicationContextAware,BeanCla
 
             builder.addPropertyValue("asyncType",annotation.asyncType());
 
+            builder.addPropertyValue("failType",annotation.failType());
+
             BeanDefinition beanDefinition = builder.getBeanDefinition();
 
             rpcRefBeanDefinitions.put(field.getName(), beanDefinition);

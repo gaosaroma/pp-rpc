@@ -36,7 +36,7 @@ public class ConsistentHashLoadBalancer implements ServiceLoadBalancer<ServiceIn
                 ring.put((buildServiceInstanceKey(instance) + VIRTUAL_NODE_JOIN + i).hashCode(), instance);
             }
         }
-        log.info("ring "+ring.size());
+//        log.info("ring "+ring.size());
         return ring;
     }
 
