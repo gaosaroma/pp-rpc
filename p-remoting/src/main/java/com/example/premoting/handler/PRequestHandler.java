@@ -17,7 +17,7 @@ public class PRequestHandler extends SimpleChannelInboundHandler<PProtocol<Objec
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, PProtocol<Object> msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, PProtocol<Object> msg) {
         if (msg.getBody() instanceof PRequest) {
             try{
                 PRequestProcessor.submitRequest(() -> {
@@ -46,18 +46,9 @@ public class PRequestHandler extends SimpleChannelInboundHandler<PProtocol<Objec
                 });
 
             } catch (RejectedExecutionException e){
-                PProtocol<PResponse> pProtocol = new PProtocol<>();
-                PResponse pResponse = new PResponse();
-
-                // 修改状态、报文类型和长度
+                // 抛弃请求后，让调用者超时，进行fail_fast或者fail_over
                 MsgHeader header = msg.getMsgHeader();
-                header.setMsgType((byte) MsgType.RESPONSE.getType());
-                header.setStatus((byte) MsgStatus.FAIL.getCode());
-                pResponse.setMessage(e.toString());
-                log.error("process request {} error", header.getRequestId(), e);
-                pProtocol.setMsgHeader(header);
-                pProtocol.setBody(pResponse);
-                ctx.writeAndFlush(pProtocol);
+                log.error("process request {} abort", header.getRequestId(), e);
             }
 
 
